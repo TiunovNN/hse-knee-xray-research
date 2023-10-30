@@ -20,4 +20,4 @@
 3- Moderate (222 шт.)
 4- Severe (207 шт.)
 
-Ссылка на данные: https://www.kaggle.com/datasets/tommyngx/digital-knee-xray/data
+Ссылка на данные: https://tnn-hse-medtech.storage.yandexcloud.net
