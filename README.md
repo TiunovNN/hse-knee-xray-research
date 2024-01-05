@@ -32,3 +32,7 @@
 4- Severe (207 шт.)
 
 Ссылка на данные: https://tnn-hse-medtech.storage.yandexcloud.net
+
+## Модели
+
+* ML-модель на основе HOG [ссылка](models/ML)
