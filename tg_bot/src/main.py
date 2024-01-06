@@ -204,6 +204,8 @@ async def handle_save_training_image(message: types.Message, bot: Bot):
 
 
 # wrong save training image
+@dp.message(StateFilter(Action.predict))
+@dp.message(StateFilter(Action.lots_of_predictions))
 @dp.message(StateFilter(Action.help_with_training))
 async def handle_wrong_save_training_image(message: types.Message):
     await message.reply(text='Вы забыли прислать фотографию или написать к какому классу относится, возможно неверно '
