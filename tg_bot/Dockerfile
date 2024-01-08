@@ -1,9 +1,9 @@
 FROM jgoclawski/wget
-ARG model_name=hog_cat_boost_v2.cbm
+ARG model_name=hog_cat_boost_v3.cbm
 RUN wget https://storage.yandexcloud.net/tnn-hse-medtech/models/${model_name}
 
 FROM python:3.11-slim
-ARG model_name=hog_cat_boost_v2.cbm
+ARG model_name=hog_cat_boost_v3.cbm
 WORKDIR /src
 COPY requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
