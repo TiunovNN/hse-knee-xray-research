@@ -189,7 +189,7 @@ async def handle_single_sending_prediction(message: types.Message, bot: Bot,
     form_data = FormData()
     form_data.add_field('files', buffer)
 
-    async with httpclient.post('/predict/', data=form_data) as response:
+    async with httpclient.post('/predict', data=form_data) as response:
         if response.status == HTTPStatus.OK:
             answer = await response.json()
             severity = answer[0]['severity']
