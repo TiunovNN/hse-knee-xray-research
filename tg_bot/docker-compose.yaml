@@ -1,7 +1,8 @@
 version: "3.8"
 services:
   bot:
-    image: tiunovnn/hse-knee-bot:v2
+    image: tiunovnn/hse-knee-bot:v3
     environment:
       - BOT_TOKEN=
+      - BOT_API_URL=http://api
     restart: always
