@@ -13,7 +13,7 @@ from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BotCommand, BotCommandScopeDefault
-from aiohttp import BytesIOPayload, MultipartWriter
+from aiohttp import FormData
 from aiohttp.client import ClientSession
 
 CLASSES = ['Normal', 'Doubtful', 'Mild', 'Moderate', 'Severe']
@@ -79,7 +79,7 @@ class Config:
 def configure_logging():
     # Configure logging
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s',
         stream=sys.stdout,
         force=True,
@@ -186,15 +186,16 @@ async def handle_single_sending_prediction(message: types.Message, bot: Bot,
     @return: None.
     """
     buffer: io.BytesIO = await bot.download(message.photo[-1])
-    with MultipartWriter('form-data') as writer:
-        writer.append_payload(BytesIOPayload(buffer, disposition=None))
+    form_data = FormData()
+    form_data.add_field('files', buffer)
 
-    async with httpclient.post('/predict', data=writer) as response:
+    async with httpclient.post('/predict/', data=form_data) as response:
         if response.status == HTTPStatus.OK:
             answer = await response.json()
+            severity = answer[0]['severity']
             await message.answer_photo(photo=message.photo[-1].file_id,
                                        parse_mode=ParseMode.MARKDOWN_V2,
-                                       caption=f'Колено на Вашей фотографии отношу к *{CLASSES[answer["severity"]]}* степень остеоартрита')
+                                       caption=f'Колено на Вашей фотографии отношу к *{CLASSES[severity]}* степень остеоартрита')
         if 400 <= response.status < 500:
             answer = await response.json()
             await message.answer(f'Получена ошибка от API:\n {pformat(answer)}')
@@ -214,11 +215,11 @@ async def handle_save_training_image(message: types.Message, bot: Bot, httpclien
     @return: None.
     """
     buffer: io.BytesIO = await bot.download(message.photo[-1])
-    with MultipartWriter('form-data') as writer:
-        writer.append_payload(BytesIOPayload(buffer, disposition=None))
+    form_data = FormData()
+    form_data.add_field('file', buffer)
 
     severity = CLASSES.index(message.caption)
-    async with httpclient.post(f'/train/{severity}', data=writer) as response:
+    async with httpclient.post(f'/train/{severity}', data=form_data) as response:
         if response.status == HTTPStatus.OK:
             await message.answer_photo(photo=message.photo[-1].file_id,
                                        parse_mode=ParseMode.MARKDOWN_V2,

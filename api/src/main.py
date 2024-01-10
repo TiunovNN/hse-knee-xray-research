@@ -11,7 +11,7 @@ from schemas import ErrorMessage, Severity, SeverityResponse
 app = FastAPI()
 
 
-@app.post('/predict/', responses={400: {'model': ErrorMessage}})
+@app.post('/predict', responses={400: {'model': ErrorMessage}})
 async def predict_files(
         files: list[UploadFile],
         predictor: PredictorInstance
