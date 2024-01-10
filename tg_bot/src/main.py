@@ -3,20 +3,18 @@ import io
 import logging
 import os
 import sys
-import time
-import catboost
-
 from dataclasses import dataclass
-from pathlib import Path
+from http import HTTPStatus
+from pprint import pformat
+
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart, Command, StateFilter
+from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BotCommand, BotCommandScopeDefault
-
-from prediction import Predictor
-
+from aiohttp import BytesIOPayload, MultipartWriter
+from aiohttp.client import ClientSession
 
 CLASSES = ['Normal', 'Doubtful', 'Mild', 'Moderate', 'Severe']
 SHOW_CLASSES = ', '.join(map(repr, CLASSES))
@@ -24,9 +22,7 @@ SHOW_CLASSES = ', '.join(map(repr, CLASSES))
 
 # states
 class Action(StatesGroup):
-    predict = State()
     help_with_training = State()
-    lots_of_predictions = State()
 
 
 # Commands
@@ -42,14 +38,6 @@ COMMANDS = [
     BotCommand(
         command='description',
         description='Получить описание бота.'
-    ),
-    BotCommand(
-        command='predict',
-        description='Предсказать результат состояния колена по рентгеновск(ому/им) снимк(у/ам).'
-    ),
-    BotCommand(
-        command='lots_of_predictions',
-        description='Непрерывно предсказывать по рентгеновским снимкам колен.'
     ),
     BotCommand(
         command='help_with_training',
@@ -73,7 +61,7 @@ def write_commands():
 @dataclass
 class Config:
     token: str
-    model_path: str
+    api_url: str
 
     @classmethod
     def from_env(cls) -> 'Config':
@@ -81,14 +69,11 @@ class Config:
         if not token:
             raise ValueError('Please, set BOT_TOKEN')
 
-        model_path = os.getenv('BOT_MODEL_PATH')
-        if not model_path:
-            raise ValueError('Please, set BOT_MODEL_PATH')
+        api_url = os.getenv('BOT_API_URL')
+        if not api_url:
+            raise ValueError('Please, set BOT_API_URL')
 
-        if not Path(model_path).is_file():
-            raise ValueError(f'File {model_path} does not exist')
-
-        return Config(token, model_path)
+        return Config(token, api_url)
 
 
 def configure_logging():
@@ -146,37 +131,6 @@ async def handle_description(message: types.Message):
     await message.answer(text=text)
 
 
-@dp.message(Command('predict'))
-async def handle_predict(message: types.Message, state: FSMContext):
-    """
-    Функция, которая откликается на команду /predict, устанавливает состояние на предсказание работы модели по получаемым
-    изображениям.
-
-    @param message: Объект сообщения пользователя.
-    @param state: Состояние устанавливаемое внутри метода.
-    @return: None.
-    """
-    text = 'Пожалуйста, пришлите фотографию рентгеновского снимка вашего колена, если передумали, то отправьте /cancel.'
-    await message.answer(text=text)
-    await state.set_state(Action.predict.state)
-
-
-@dp.message(Command('lots_of_predictions'))
-async def handle_lots_of_predictions(message: types.Message, state: FSMContext):
-    """
-    Функция, которая откликается на команду /lots_of_predictions, устанавливает состояние на предсказание работы модели
-    по получаемым изображениям не ограничиваясь одним сообщением.
-
-    @param message: Объект сообщения пользователя.
-    @param state: Состояние устанавливаемое внутри метода.
-    @return: None.
-    """
-    text = 'Пожалуйста, пришлите фотографии рентгеновских снимков колен, если передумали или больше не хотите ничего ' \
-           'отправлять, то пришлите команду /cancel.'
-    await message.answer(text=text)
-    await state.set_state(Action.lots_of_predictions.state)
-
-
 @dp.message(Command('help_with_training'))
 async def handle_help(message: types.Message, state: FSMContext):
     """
@@ -194,9 +148,7 @@ async def handle_help(message: types.Message, state: FSMContext):
     await state.set_state(Action.help_with_training.state)
 
 
-@dp.message(StateFilter(Action.predict), Command('cancel'))
 @dp.message(StateFilter(Action.help_with_training), Command('cancel'))
-@dp.message(StateFilter(Action.lots_of_predictions), Command('cancel'))
 async def handle_cancel(message: types.Message, state: FSMContext):
     """
     Функция, которая откликается на команду /cancel, убирает любое состояние и сообщает о том, какое было убрано.
@@ -221,44 +173,38 @@ async def handle_wrong_cancel(message: types.Message):
     await message.answer(text='В данный момент не выбрана команда, которую можно отменить.')
 
 
-@dp.message(StateFilter(Action.lots_of_predictions), F.photo)
-async def handle_unstoppable_prediction(message: types.Message, bot: Bot, predictor: Predictor):
-    """
-    Функция для состояния lots_of_predictions, которая обрабатывает полученные фотографии моделью и даёт предсказания,
-    без прекращения своей работы.
-
-    @param message: Объект сообщения пользователя.
-    @param bot: Бот для получения изображения и его передачи в модель.
-    @param predictor: Предобученная модель для определения степени остеоартрита коленного сустава.
-    @return: None.
-    """
-    logging.info(f'{message.photo=!r}')
-    buffer: io.BytesIO = await bot.download(message.photo[-1])
-    start_time = time.perf_counter()
-    severity = predictor.predict(buffer)
-    logging.info(f'Predicted: {time.perf_counter() - start_time}')
-    await message.answer_photo(photo=message.photo[-1].file_id, parse_mode=ParseMode.MARKDOWN_V2,
-                               caption=f'Колено на Вашей фотографии отношу к *{CLASSES[severity]}* степень остеоартрита')
-
-
-@dp.message(StateFilter(Action.predict), F.photo)
-async def handle_single_sending_prediction(message: types.Message, state: FSMContext, bot: Bot, predictor: Predictor):
+@dp.message(StateFilter(None), F.photo)
+async def handle_single_sending_prediction(message: types.Message, bot: Bot,
+                                           httpclient: ClientSession):
     """
     Функция для состояния predict, которая обрабатывает полученные фотографии моделью и даёт предсказания, но
     прекращает свою работу после первого сообщения.
 
     @param message: Объект сообщения пользователя.
-    @param state: Состояние, которое убирается внутри метода.
     @param bot: Бот для получения изображения и его передачи в модель.
-    @param predictor: Предобученная модель для определения степени остеоартрита коленного сустава.
+    @param httpclient: Клиент для запросов к API
     @return: None.
     """
-    await handle_unstoppable_prediction(message, bot, predictor)
-    await state.clear()
+    buffer: io.BytesIO = await bot.download(message.photo[-1])
+    with MultipartWriter('form-data') as writer:
+        writer.append_payload(BytesIOPayload(buffer, disposition=None))
+
+    async with httpclient.post('/predict', data=writer) as response:
+        if response.status == HTTPStatus.OK:
+            answer = await response.json()
+            await message.answer_photo(photo=message.photo[-1].file_id,
+                                       parse_mode=ParseMode.MARKDOWN_V2,
+                                       caption=f'Колено на Вашей фотографии отношу к *{CLASSES[answer["severity"]]}* степень остеоартрита')
+        if 400 <= response.status < 500:
+            answer = await response.json()
+            await message.answer(f'Получена ошибка от API:\n {pformat(answer)}')
+
+        if response.status >= 500:
+            await message.answer(f'Ошибка на сервере, повторите попытку позже')
 
 
 @dp.message(StateFilter(Action.help_with_training), F.photo, F.caption.in_(CLASSES))
-async def handle_save_training_image(message: types.Message, bot: Bot):
+async def handle_save_training_image(message: types.Message, bot: Bot, httpclient: ClientSession):
     """
     Функция для состояния help_with_training, которая сохраняет изображения и информацию о том к какому классу надо
     отнести эту фотографию.
@@ -267,14 +213,25 @@ async def handle_save_training_image(message: types.Message, bot: Bot):
     @param bot: Бот для получения изображения и его сохранения.
     @return: None.
     """
-    photo_path = f'./../help_images/{message.caption}/{message.photo[-1].file_id}.jpg'
-    await bot.download(message.photo[-1], destination=photo_path)
-    await message.answer_photo(photo=message.photo[-1].file_id, parse_mode=ParseMode.MARKDOWN_V2,
-                               caption=f'Спасибо, мы сохранили вашу фотографию класса *{message.caption}*')
+    buffer: io.BytesIO = await bot.download(message.photo[-1])
+    with MultipartWriter('form-data') as writer:
+        writer.append_payload(BytesIOPayload(buffer, disposition=None))
+
+    severity = CLASSES.index(message.caption)
+    async with httpclient.post(f'/train/{severity}', data=writer) as response:
+        if response.status == HTTPStatus.OK:
+            await message.answer_photo(photo=message.photo[-1].file_id,
+                                       parse_mode=ParseMode.MARKDOWN_V2,
+                                       caption=f'Спасибо, мы сохранили вашу фотографию класса *{message.caption}*')
+
+        if 400 <= response.status < 500:
+            answer = await response.json()
+            await message.answer(f'Получена ошибка от API:\n {pformat(answer)}')
+
+        if response.status >= 500:
+            await message.answer(f'Ошибка на сервере, повторите попытку позже')
 
 
-@dp.message(StateFilter(Action.predict))
-@dp.message(StateFilter(Action.lots_of_predictions))
 @dp.message(StateFilter(Action.help_with_training))
 async def handle_wrong_save_training_image(message: types.Message):
     """
@@ -284,22 +241,9 @@ async def handle_wrong_save_training_image(message: types.Message):
     @param message: Объект сообщения пользователя.
     @return: None.
     """
-    await message.reply(text='Вы забыли прислать фотографию или написать к какому классу относится, возможно неверно '
-                             'написали класс или прикрепили сразу несколько фотографий.')
-
-
-@dp.message(F.photo)
-async def handle_wrong_photo_state(message: types.Message):
-    """
-    Функция для любой фотографии без состояния, которая сообщает о том, что пользователь прислал фото, но мы не знаем
-    чего именно он хочет.
-
-    @param message: Объект сообщения пользователя.
-    @return: None.
-    """
-    await message.answer(text='Если Вы хотите получить предсказание, то пропишите /predict.\nДля получения '
-                              'предсказания для каждого нового сообщения с фотографией, тогда /lots_of_predictions.\n'
-                              'Для помощи в моём обучении используй /help_with_training.')
+    await message.reply(
+        text='Вы забыли прислать фотографию или написать к какому классу относится, возможно неверно '
+             'написали класс или прикрепили сразу несколько фотографий.')
 
 
 @dp.message()
@@ -311,8 +255,10 @@ async def handle_error(message: types.Message):
     @param message: Объект сообщения пользователя.
     @return: None.
     """
-    await message.reply(text="Не могу понять чего Вы хотите, возможно, Вы напутали команду?🫡")  # it's ok, it's emoji
-    await message.answer(text=f'Выберите одну из следующих:\n{write_commands()}')
+    await message.reply(
+        text="Не могу понять чего Вы хотите, возможно, Вы напутали команду?🫡")  # it's ok, it's emoji
+    await message.answer(
+        text=f'Выберите одну из следующих или пришлите рентгеновский снимок:\n{write_commands()}')
 
 
 async def start_bot(bot: Bot):
@@ -333,12 +279,10 @@ async def main():
     configure_logging()
     config = Config.from_env()
     bot = Bot(config.token)
-    predictor = Predictor(catboost.CatBoostClassifier().load_model(config.model_path))
+    session = ClientSession(base_url=config.api_url)
     dp.startup.register(start_bot)
-    try:
-        await dp.start_polling(bot, predictor=predictor)
-    finally:
-        await bot.session.close()
+    async with session as aiohttp_client:
+        await dp.start_polling(bot, httpclient=aiohttp_client, close_bot_session=True)
 
 
 if __name__ == '__main__':
