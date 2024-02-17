@@ -7,8 +7,7 @@ from tg_bot.src.main import create_help_dir
 
 @pytest.mark.asyncio
 async def test_create_help_dir():
-    # переходим в бота, сложная конструкция, чтобы запускать как из файла,
-    # так и из корня проекта
+    # переходим в бота, сложная конструкция, чтобы запускать как из файла, так и из корня проекта
     os.chdir(os.path.dirname(os.path.abspath(__file__)) + '/../../../tg_bot/')
     contents = os.listdir('./')
 
@@ -18,8 +17,7 @@ async def test_create_help_dir():
     help_images_path = 'help_images'
     test_help_images_path = 'test_help_images'
 
-    # переименовываем для сохранения того, что есть локально,
-    # чтоб можно было протестировать, а затем восстановить
+    # переименовываем для сохранения того, что есть локально, чтоб можно было протестировать, а затем восстановить
     if os.path.exists(help_images_path):
         os.rename(help_images_path, test_help_images_path)
 
