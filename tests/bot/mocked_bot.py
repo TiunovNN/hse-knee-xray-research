@@ -1,5 +1,5 @@
 from collections import deque
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Deque, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Deque, Dict, Optional, Type # noqa
 
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
@@ -15,7 +15,7 @@ class MockedSession(BaseSession):
         self.requests: Deque[TelegramMethod[TelegramType]] = deque()
         self.closed = True
 
-    def add_result(self, response: Response[TelegramType]) -> Response[TelegramType]:
+    def add_result(self, response: Response[TelegramType]) -> Response[TelegramType]: # noqa
         self.responses.append(response)
         return response
 

@@ -11,7 +11,8 @@ from tg_bot.src.main import handle_help_us, Action
 @pytest.mark.asyncio
 async def test_help_us_handler(storage, bot, show_classes):
     message = AsyncMock()
-    state = FSMContext(storage=storage, key=StorageKey(bot_id=bot.id, user_id=TEST_USER.id, chat_id=TEST_CHAT.id))
+    key = StorageKey(bot_id=bot.id, user_id=TEST_USER.id, chat_id=TEST_CHAT.id)
+    state = FSMContext(storage=storage, key=key)
     await handle_help_us(message, state)
 
     text = 'Пожалуйста, пришлите в одном сообщении вашу фотографию ' \
