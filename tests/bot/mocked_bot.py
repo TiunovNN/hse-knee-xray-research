@@ -9,6 +9,9 @@ from aiogram.types import UNSET_PARSE_MODE, ResponseParameters, User
 
 
 class MockedSession(BaseSession):
+    """
+    Мок бота из официального github репозитория.
+    """
     def __init__(self):
         super(MockedSession, self).__init__()
         self.responses: Deque[Response[TelegramType]] = deque()

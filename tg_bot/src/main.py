@@ -268,17 +268,7 @@ async def start_bot(bot: Bot):
     await bot.set_my_commands(COMMANDS, BotCommandScopeDefault())
 
 
-def create_help_dir():
-    help_images_path = './../help_images'
-    if not os.path.exists(help_images_path):
-        os.makedirs(help_images_path)
-    for help_image_class in CLASSES:
-        if not os.path.exists(help_images_path + '/' + help_image_class):
-            os.makedirs(help_images_path + '/' + help_image_class)
-
-
 async def main():
-    create_help_dir()
     configure_logging()
     config = Config.from_env()
     bot = Bot(config.token)

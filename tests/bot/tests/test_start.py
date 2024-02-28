@@ -7,6 +7,11 @@ from tg_bot.src.main import handle_start
 
 @pytest.mark.asyncio
 async def test_start_handler():
+    """
+    Проверка корректной отработки команды start
+
+    :return: None.
+    """
     message = AsyncMock()
     await handle_start(message)
 

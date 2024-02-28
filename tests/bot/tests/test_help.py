@@ -7,6 +7,12 @@ from tg_bot.src.main import handle_help
 
 @pytest.mark.asyncio
 async def test_handle_help(write_commands):
+    """
+    Проверка правильной вспомогательной информации от бота.
+
+    :param write_commands: Строка с возможными командами и их описание.
+    :return: None.
+    """
     message = AsyncMock()
     await handle_help(message)
 

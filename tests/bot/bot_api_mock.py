@@ -1,5 +1,6 @@
 import io
 import random
+from typing import Any, Callable
 
 from unittest.mock import AsyncMock
 
@@ -8,17 +9,30 @@ from aiogram.client.session import aiohttp
 from aiogram.types import PhotoSize
 
 from tests.bot.mocked_response import MockResponse
-from tg_bot.src.main import handle_single_sending_prediction, handle_save_training_image # noqa
+from tg_bot.src.main import handle_single_sending_prediction, handle_save_training_image  # noqa
 
 
 async def bot_api_mock(
         bot: Bot,
         mocker,
         status: int,
-        response,
-        executable_function='handle_single_sending_prediction',
-        caption=None
+        response: Any,
+        executable_function: Callable = handle_single_sending_prediction,
+        caption: str | None = None
 ) -> AsyncMock:
+    """
+    Функция мокающая работу бота с созданным случайно файлом,
+    мокаем api запрос и сессию и возвращаем сообщение для проверки в тесте.
+
+    :param bot: Мок бота.
+    :param mocker: Мокер для объектов и их результатов функций.
+    :param status: Какой статус ответа ожидают от мока.
+    :param response: Какой ответ ожидают от мока.
+    :param executable_function: Какую функцию необходимо вызвать, по умолчанию
+        handle_single_sending_prediction (предсказание по фото).
+    :param caption: Описание к фотографии.
+    :return: AsyncMock (types.Message).
+    """
     message = AsyncMock()
 
     mock_file = random.randbytes(100_000)
@@ -41,5 +55,5 @@ async def bot_api_mock(
         fake_response = MockResponse(status, response)
         mocker.patch.object(mocked_session, 'post', return_value=fake_response)
 
-        await globals()[executable_function](message, bot, mocked_session)
+        await executable_function(message, bot, mocked_session)
         return message

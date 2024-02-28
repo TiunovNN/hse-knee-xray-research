@@ -7,6 +7,12 @@ from tg_bot.src.main import handle_description
 
 @pytest.mark.asyncio
 async def test_handle_description(show_classes):
+    """
+    Проверка отправки описания.
+
+    :param show_classes: Строка с возможными классами.
+    :return: None.
+    """
     message = AsyncMock()
     await handle_description(message)
 

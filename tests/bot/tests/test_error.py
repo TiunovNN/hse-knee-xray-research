@@ -7,6 +7,12 @@ from tg_bot.src.main import handle_error
 
 @pytest.mark.asyncio
 async def test_error_handler(write_commands):
+    """
+    Проверка правильной реакции, когда бот не понимает что от него требуется.
+
+    :param write_commands: Строка с возможными командами и их описание.
+    :return: None.
+    """
     message = AsyncMock()
     await handle_error(message)
 

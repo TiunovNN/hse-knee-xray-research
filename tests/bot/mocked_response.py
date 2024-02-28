@@ -1,4 +1,7 @@
 class MockResponse:
+    """
+    Мок api ответа для сессии клиента.
+    """
     def __init__(self, status, response):
         self.status = status
         self.response = response
