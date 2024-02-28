@@ -1,8 +1,0 @@
-version: "3.8"
-services:
-  bot:
-    image: tiunovnn/hse-knee-bot:v4
-    environment:
-      - BOT_TOKEN=
-      - BOT_API_URL=http://api
-    restart: always
