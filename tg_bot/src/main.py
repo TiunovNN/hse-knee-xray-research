@@ -132,7 +132,7 @@ async def handle_description(message: types.Message):
 
 
 @dp.message(Command('help_with_training'))
-async def handle_help(message: types.Message, state: FSMContext):
+async def handle_help_us(message: types.Message, state: FSMContext):
     """
     Функция, которая откликается на команду /help_with_training, устанавливает состояние на получение изображения и его
     класса для дальнейшего обучения.
@@ -182,7 +182,7 @@ async def handle_single_sending_prediction(message: types.Message, bot: Bot,
 
     @param message: Объект сообщения пользователя.
     @param bot: Бот для получения изображения и его передачи в модель.
-    @param httpclient: Клиент для запросов к API
+    @param httpclient: Клиент для запросов к API.
     @return: None.
     """
     buffer: io.BytesIO = await bot.download(message.photo[-1])
@@ -196,12 +196,13 @@ async def handle_single_sending_prediction(message: types.Message, bot: Bot,
             await message.answer_photo(photo=message.photo[-1].file_id,
                                        parse_mode=ParseMode.MARKDOWN_V2,
                                        caption=f'Колено на Вашей фотографии отношу к *{CLASSES[severity]}* степень остеоартрита')
+
         if 400 <= response.status < 500:
             answer = await response.json()
             await message.answer(f'Получена ошибка от API:\n {pformat(answer)}')
 
         if response.status >= 500:
-            await message.answer(f'Ошибка на сервере, повторите попытку позже')
+            await message.answer('Ошибка на сервере, повторите попытку позже')
 
 
 @dp.message(StateFilter(Action.help_with_training), F.photo, F.caption.in_(CLASSES))
@@ -212,6 +213,7 @@ async def handle_save_training_image(message: types.Message, bot: Bot, httpclien
 
     @param message: Объект сообщения пользователя.
     @param bot: Бот для получения изображения и его сохранения.
+    @param httpclient: Клиент для запросов к API.
     @return: None.
     """
     buffer: io.BytesIO = await bot.download(message.photo[-1])
@@ -230,7 +232,7 @@ async def handle_save_training_image(message: types.Message, bot: Bot, httpclien
             await message.answer(f'Получена ошибка от API:\n {pformat(answer)}')
 
         if response.status >= 500:
-            await message.answer(f'Ошибка на сервере, повторите попытку позже')
+            await message.answer('Ошибка на сервере, повторите попытку позже')
 
 
 @dp.message(StateFilter(Action.help_with_training))
@@ -266,17 +268,7 @@ async def start_bot(bot: Bot):
     await bot.set_my_commands(COMMANDS, BotCommandScopeDefault())
 
 
-def create_help_dir():
-    help_images_path = './../help_images'
-    if not os.path.exists(help_images_path):
-        os.makedirs(help_images_path)
-    for help_image_class in CLASSES:
-        if not os.path.exists(help_images_path + '/' + help_image_class):
-            os.makedirs(help_images_path + '/' + help_image_class)
-
-
 async def main():
-    create_help_dir()
     configure_logging()
     config = Config.from_env()
     bot = Bot(config.token)
