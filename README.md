@@ -35,4 +35,5 @@
 
 ## Модели
 
-* ML-модель на основе HOG [ссылка](models/ML)
+* ML-модель на основе HOG [ссылка](models/ML_hog)
+* ML-модель на основе Autoencoder [ссылка](models/ML_autoencoder)
