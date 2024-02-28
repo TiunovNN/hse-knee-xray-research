@@ -7,7 +7,7 @@ on:
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
-  REGISTRY: cr.yandex/
+  REGISTRY: cr.yandex
   IMAGE_NAME: crp9d2qhe6l8kdja1v3i/bot
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
