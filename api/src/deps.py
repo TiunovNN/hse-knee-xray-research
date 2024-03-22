@@ -3,7 +3,6 @@ from typing import Annotated
 
 import aioboto3 as aioboto3
 import catboost
-import aioboto3
 from fastapi import Depends
 
 from prediction import Predictor
