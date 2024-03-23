@@ -37,3 +37,14 @@
 
 * ML-модель на основе HOG [ссылка](models/ML_hog)
 * ML-модель на основе Autoencoder [ссылка](models/ML_autoencoder)
+
+
+## Запуск работы проекта
+
+Для начала необходимо прописать environments в [docker-compose.yaml](docker-compose.yaml): API_S3_ACCESS_KEY_ID, API_S3_BUCKET, API_S3_SECRET_ACCESS_KEY, BOT_TOKEN.
+
+После чего для запуска проекта можно прописать `docker-compose -f ./docker-compose.yaml up`
+
+## Иллюстрация работы
+
+![](https://github.com/TiunovNN/hse-knee-xray-research/blob/master/Illustration_of_the_work.gif)
