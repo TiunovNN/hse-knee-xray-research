@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   api:
-    image: cr.yandex/crp9d2qhe6l8kdja1v3i/api:latest
+    image: tiunovnn/hse-knee-api:latest
     environment:
       - API_S3_ACCESS_KEY_ID=
       - API_S3_BUCKET=
@@ -11,7 +11,7 @@ services:
     restart: always
 
   bot:
-    image: cr.yandex/crp9d2qhe6l8kdja1v3i/bot:latest
+    image: tiunovnn/hse-knee-bot:latest
     environment:
       - BOT_TOKEN=
       - BOT_API_URL=http://api
