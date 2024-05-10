@@ -1,9 +1,8 @@
 from functools import cache
 from typing import Annotated
 
-import aioboto3 as aioboto3
-import catboost
 import aioboto3
+import catboost
 from fastapi import Depends
 
 from prediction import Predictor

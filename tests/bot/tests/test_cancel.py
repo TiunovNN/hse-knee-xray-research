@@ -27,8 +27,9 @@ async def test_cancel_handler(storage, bot):
     await handle_cancel(message, state)
 
     assert await state.get_state() is None
-    t = 'Завершили /help_with_training, можете продолжать делать что хотите.😎'
-    message.answer.assert_called_with(text=t)
+    text =\
+        'Завершили /help_with_training, можете продолжать делать что хотите.😎'
+    message.answer.assert_called_with(text=text)
 
 
 @pytest.mark.asyncio
