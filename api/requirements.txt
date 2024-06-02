@@ -9,7 +9,7 @@ async-timeout==4.0.3
 attrs==23.2.0
 boto3==1.33.1
 botocore==1.33.1
-catboost==1.2.2
+catboost
 certifi==2023.11.17
 click==8.1.7
 contourpy==1.2.0
@@ -34,7 +34,7 @@ kiwisolver==1.4.5
 lazy_loader==0.3
 MarkupSafe==2.1.3
 matplotlib==3.8.2
-multidict==6.0.4
+multidict
 networkx==3.2.1
 numpy==1.26.3
 orjson==3.9.10
