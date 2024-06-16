@@ -2,20 +2,17 @@ from functools import cache
 from typing import Annotated
 
 import aioboto3
-import catboost
 from fastapi import Depends
 
 from prediction import Predictor
 from settings import Settings, create_settings
+from ultralytics import YOLO
 
 Config = Annotated[Settings, Depends(create_settings)]
 
-
 @cache
 def cached_predictor(model_path: str) -> Predictor:
-    predictor = Predictor(
-        catboost.CatBoostClassifier().load_model(model_path)
-    )
+    predictor = Predictor(YOLO(model_path))
     return predictor
 
 
